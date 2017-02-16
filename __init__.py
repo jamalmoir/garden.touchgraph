@@ -23,6 +23,7 @@ class TouchGraph(FloatLayout):
     y_labels = ListProperty()
     x_labels = ListProperty()
     max_y = NumericProperty(0)
+    min_y = NumericProperty(0)
     tickWidthFactor = 0.5
     circleDiameterFactor = 6
 
@@ -61,11 +62,16 @@ class TouchGraph(FloatLayout):
             if p < self.points[::2][i]:
                 raise ValueError('self.Points must be ascending on x-Axis')
         self.max = [max(self.points[::2]), max(self.points[1::2])]
+        self.min = [0, 0]
         if self.max_y > 0:
             if self.max[1] > self.max_y:
                 raise ValueError('not all points are visible on y axis')
             else:
                 self.max[1] = self.max_y
+        if 0 < self.min_y:
+            raise ValueError('not all points are visible on the y axis')
+        else:
+            self.min[1] = self.min_y
         self.current_point = None  # index of point being dragged
         with self.canvas:
             self.scissor = ScissorPush(x=int(round(self.to_window(*self.pos)[0])),
@@ -141,8 +147,9 @@ class TouchGraph(FloatLayout):
 
     @property
     def point_coords(self):
+        y_normaliser = self.max[1] - self.min[1]
         norm_x = [float(x) / self.max[0] for x in self.points[::2]]
-        norm_y = [float(y) / self.max[1] for y in self.points[1::2]]
+        norm_y = [float(y) / y_normaliser for y in self.points[1::2]]
         x = [x * (self.width - 2 * self.padding_x) + self.x + self.padding_x for x in norm_x]
         y = [y * (self.height - 2 * self.padding_y) + self.y + self.padding_y for y in norm_y]
         coords = x + y
@@ -220,7 +227,8 @@ if __name__ == "__main__":
                               x_labels=['A', 'B', 'C', 'D'],
                               x_ticks=[0, 10, 20, 30],
                               y_ticks=[.1, .2, .5, .9],
-                              max_y=1)
+                              max_y=100,
+                              min_y=30)
             box.add_widget(graph)
             return box
 
